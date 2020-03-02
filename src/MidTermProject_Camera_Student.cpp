@@ -40,11 +40,9 @@ void usage(const char *progname) {
 int main(int argc, const char *argv[])
 {
     /* INIT VARIABLES AND DATA STRUCTURES */
-    string detectorType = ""; //  "SHITOMASI";
-    string descriptorType = ""; //  "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
-    string matcherType = "";  // "MAT_BF";        // MAT_BF, MAT_FLANN
-    // string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-    string selectorType = "";  // "SEL_NN";       // SEL_NN, SEL_KNN
+    string detectorType = ""; //  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+    string matcherType = "";  // MAT_BF, MAT_FLANN
+    string selectorType = ""; // SEL_NN, SEL_KNN
 
     bool bVis = false;            // visualize results
     bool bFocusOnVehicle = false;
@@ -178,7 +176,7 @@ int main(int argc, const char *argv[])
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
         cv::Mat descriptors;
-        descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+        descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, detectorType);
         //// EOF STUDENT ASSIGNMENT
 
         // push descriptors for current frame to end of data buffer
@@ -188,13 +186,10 @@ int main(int argc, const char *argv[])
 
         if (dataBuffer.size() > 1) // wait until at least two images have been processed
         {
-
             /* MATCH KEYPOINT DESCRIPTORS */
 
             vector<cv::DMatch> matches;
-            string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
 
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp

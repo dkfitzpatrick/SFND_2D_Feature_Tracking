@@ -5,7 +5,7 @@ using namespace std;
 
 // Find best matches for keypoints in two camera images based on several matching methods
 double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-                      std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
+    std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
 {
     double t;
     // configure matcher
@@ -78,7 +78,7 @@ double descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &des
     } else if (descriptorType.compare("SIFT") == 0) {
         extractor = cv::xfeatures2d::SIFT::create();
     } else {
-        cerr << "unexpected detector type: " << descriptorType << endl;
+        cerr << "descKeypoints -  unexpected detector type: " << descriptorType << endl;
         exit(1);
     }
 
@@ -183,7 +183,7 @@ double detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, st
         sift->detectAndCompute(img, cv::Mat(), keypoints, desc);
         t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     } else {
-        cerr << "unexpected detector type: " << detectorType << endl;
+        cerr << "detKeypoints - unexpected detector type: " << detectorType << endl;
         exit(1);
     }
 
