@@ -18,17 +18,33 @@
 
 using namespace std;
 
+    // -d <DET_TYPE> -m <MAT_TYPE> -s <SEL_TYP> [-v[isible]] [-f[ocusOnVehicle]] [-l[imitKpts]]
+    // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+    // MAT_TYPE:  MAT_BF, MAT_FLANN
+    // SEL_TYPE:  SEL_NN, SEL_KNN
+
+void usage(const char *progname) {
+    cout << "usage: " << endl;
+    cout << progname << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -s <SELECTOR_TYPE> \\" << endl;
+    cout << "    [-v] [-f] [-l]" << endl;
+    cout << "-v: visualize results" << endl;
+    cout << "-f: focusOnVehicle" << endl;
+    cout << "-l: limitKpts" << endl;    
+    cout << "" << endl;
+    cout << "DETECTOR_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT" << endl;
+    cout << "MATCHER_TYPE:  MAT_BF, MAT_FLANN" << endl;
+    cout << "SELECTOR_TYPE:  SEL_NN, SEL_KNN" << endl;
+}
+
 /* MAIN PROGRAM */
-int _main(int argc, const char *argv[])
+int main(int argc, const char *argv[])
 {
-
     /* INIT VARIABLES AND DATA STRUCTURES */
-    string detectorType = "SHITOMASI";
-    string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
-
-    string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
+    string detectorType = ""; //  "SHITOMASI";
+    string descriptorType = ""; //  "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
+    string matcherType = "";  // "MAT_BF";        // MAT_BF, MAT_FLANN
     // string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-    string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+    string selectorType = "";  // "SEL_NN";       // SEL_NN, SEL_KNN
 
     bool bVis = false;            // visualize results
     bool bFocusOnVehicle = false;
@@ -46,23 +62,23 @@ int _main(int argc, const char *argv[])
             cout << "SelectorType: " << selectorType << endl;
         } else if (strncmp(argv[i], "-v", 2) == 0) {
             bVis = true;
-            printf("\bVis: %d", bVis);
+            printf("\bvisualize: %d", bVis);
         } else if (strncmp(argv[i], "-f", 2) == 0) {
             bFocusOnVehicle = true;
-            printf("\bVis: %d", bVis);   
+            printf("\bfocusOnVehicle: %d", bVis);   
         } else if (strncmp(argv[i], "-l", 2) == 0) {
             bLimitKpts = true;
-            printf("\bVis: %d", bVis);         
+            printf("\blimitKpts: %d", bVis);         
         } else {
             cout << "unexpected argument found: " << argv[i] << endl;
-            cout << "expecting: " << endl;
-            cout << argv[0] << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -s <SELECTOR_TYPE> \\" << endl;
-            cout << "    [-v] [-f] [-l]" << endl;
-            cout << "-v: visualize results" << endl;
-            cout << "-f: focusOnVehicle" << endl;
-            cout << "-l: limitKts" << endl;
             exit(-1);
         }
+    }
+
+    if (detectorType == "" || matcherType == "" || selectorType == "") {
+        cout << "incomplete arguments given." << endl;
+        usage(argv[0]);
+        exit(-1);
     }
 
     // data location
@@ -220,15 +236,5 @@ int _main(int argc, const char *argv[])
     return 0;
 }
 
-int main(int argc, const char *argv[])
-{
-    // -d <DET_TYPE> -m <MAT_TYPE> -s <SEL_TYP> [-v[isible]] [-f[ocusOnVehicle]] [-l[imitKpts]]
-    // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
-    // MAT_TYPE:  MAT_BF, MAT_FLANN
-    // SEL_TYPE:  SEL_NN, SEL_KNN
-    //
-    vector<string> a1{ "prog", "-d", "SHITOMASI", "-m", "MAT_BF", "-s", "SEL_NN" }; 
-    vector<vector<string>> script{ a1 };
 
-    return _main(argc, argv);
-}
+
