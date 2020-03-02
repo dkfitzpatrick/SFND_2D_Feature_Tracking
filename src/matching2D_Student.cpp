@@ -62,7 +62,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 }
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+double implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis, bool useHarris)
 {
     // compute detector parameters based on image size
     int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
@@ -70,25 +70,93 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     double minDistance = (1.0 - maxOverlap) * blockSize;
     int maxCorners = img.rows * img.cols / max(1.0, minDistance); // max. num. of keypoints
 
+    string msg("Shi-Tomasi");
+    if (useHarris) {
+        msg = "Harris";
+    }
     double qualityLevel = 0.01; // minimal accepted quality of image corners
     double k = 0.04;
 
     // Apply corner detection
     double t = (double)cv::getTickCount();
     vector<cv::Point2f> corners;
-    cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, false, k);
+    cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, useHarris, k);
 
     // add corners to result vector
     for (auto it = corners.begin(); it != corners.end(); ++it)
     {
-
         cv::KeyPoint newKeyPoint;
         newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
         newKeyPoint.size = blockSize;
         keypoints.push_back(newKeyPoint);
     }
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-    cout << "Shi-Tomasi detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+    cout << msg << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+    // visualize results
+    if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = msg + " Corner Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+
+    return t;
+}
+
+double detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
+    return implCornerDetection(keypoints, img, bVis, false);
+}
+
+double detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
+    return implCornerDetection(keypoints, img, bVis, true);
+}
+
+// FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+double detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis){
+    double t;
+    cv::Mat desc;
+
+    if (detectorType.compare("FAST") == 0) {
+        cv::Ptr<cv::FastFeatureDetector> fast = cv::FastFeatureDetector::create(10, true);
+        t = (double)cv::getTickCount();
+        fast->detect(img, keypoints);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else if (detectorType.compare("BRISK") == 0) {
+        cv::Ptr<cv::BRISK> brisk = cv::BRISK::create();
+        t = (double)cv::getTickCount();
+        brisk->detectAndCompute(img, cv::Mat(), keypoints, desc);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else if (detectorType.compare("ORB") == 0) {
+        // combination of FAST and BRIEF
+        // can set the max number of keypoints
+        cv::Ptr<cv::ORB> orb = cv::ORB::create();
+        t = (double)cv::getTickCount();
+        orb->detectAndCompute(img, cv::Mat(), keypoints, desc);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else if (detectorType.compare("FREAK") == 0) {
+        cv::Ptr<cv::xfeatures2d::FREAK> freak = cv::xfeatures2d::FREAK::create();
+        t = (double)cv::getTickCount();
+        freak->compute(img, keypoints, desc);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else if (detectorType.compare("AKAZE") == 0) {
+        cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+        t = (double)cv::getTickCount();
+        akaze->detectAndCompute(img, cv::Mat(), keypoints, desc);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else if (detectorType.compare("SIFT") == 0) {
+        cv::Ptr<cv::xfeatures2d::SIFT> sift = cv::xfeatures2d::SIFT::create();
+        t = (double)cv::getTickCount();
+        sift->detectAndCompute(img, cv::Mat(), keypoints, desc);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    } else {
+        cerr << "unexpected detector type: " << detectorType << endl;
+        exit(1);
+    }
+
 
     // visualize results
     if (bVis)
@@ -100,4 +168,6 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         imshow(windowName, visImage);
         cv::waitKey(0);
     }
+
+    return t;
 }

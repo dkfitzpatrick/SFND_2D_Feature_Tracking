@@ -19,10 +19,51 @@
 using namespace std;
 
 /* MAIN PROGRAM */
-int main(int argc, const char *argv[])
+int _main(int argc, const char *argv[])
 {
 
     /* INIT VARIABLES AND DATA STRUCTURES */
+    string detectorType = "SHITOMASI";
+    string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
+
+    string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
+    // string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+    string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+
+    bool bVis = false;            // visualize results
+    bool bFocusOnVehicle = false;
+    bool bLimitKpts = false;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-d") == 0) {
+            detectorType = argv[++i];
+            cout << "DetectorType: " << detectorType << endl;
+        } else if (strcmp(argv[i], "-m") == 0) {
+            matcherType = argv[++i];
+            cout << "MatcherType: " << matcherType << endl;
+        } else if (strcmp(argv[i], "-s") == 0) {
+            selectorType = argv[++i];
+            cout << "SelectorType: " << selectorType << endl;
+        } else if (strncmp(argv[i], "-v", 2) == 0) {
+            bVis = true;
+            printf("\bVis: %d", bVis);
+        } else if (strncmp(argv[i], "-f", 2) == 0) {
+            bFocusOnVehicle = true;
+            printf("\bVis: %d", bVis);   
+        } else if (strncmp(argv[i], "-l", 2) == 0) {
+            bLimitKpts = true;
+            printf("\bVis: %d", bVis);         
+        } else {
+            cout << "unexpected argument found: " << argv[i] << endl;
+            cout << "expecting: " << endl;
+            cout << argv[0] << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -s <SELECTOR_TYPE> \\" << endl;
+            cout << "    [-v] [-f] [-l]" << endl;
+            cout << "-v: visualize results" << endl;
+            cout << "-f: focusOnVehicle" << endl;
+            cout << "-l: limitKts" << endl;
+            exit(-1);
+        }
+    }
 
     // data location
     string dataPath = "../";
@@ -37,11 +78,10 @@ int main(int argc, const char *argv[])
 
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-    vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
-    bool bVis = false;            // visualize results
+    // vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    DataBuffer<DataFrame> dataBuffer(2);
 
     /* MAIN LOOP OVER ALL IMAGES */
-
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
     {
         /* LOAD IMAGE INTO BUFFER */
@@ -71,19 +111,18 @@ int main(int argc, const char *argv[])
 
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = "SHITOMASI";
 
         //// STUDENT ASSIGNMENT
         //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
         //// -> HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
 
-        if (detectorType.compare("SHITOMASI") == 0)
-        {
-            detKeypointsShiTomasi(keypoints, imgGray, false);
-        }
-        else
-        {
-            //...
+        double detEvalTime;
+        if (detectorType.compare("SHITOMASI") == 0) {
+            detEvalTime = detKeypointsShiTomasi(keypoints, imgGray, bVis);
+        } else if (detectorType.compare("HARRIS") == 0) {
+            detEvalTime = detKeypointsHarris(keypoints, imgGray, bVis);
+        } else {
+            detEvalTime = detKeypointsModern(keypoints, imgGray, detectorType, bVis);
         }
         //// EOF STUDENT ASSIGNMENT
 
@@ -91,7 +130,6 @@ int main(int argc, const char *argv[])
         //// TASK MP.3 -> only keep keypoints on the preceding vehicle
 
         // only keep keypoints on the preceding vehicle
-        bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle)
         {
@@ -101,7 +139,6 @@ int main(int argc, const char *argv[])
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
-        bool bLimitKpts = false;
         if (bLimitKpts)
         {
             int maxKeypoints = 50;
@@ -125,7 +162,6 @@ int main(int argc, const char *argv[])
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
         cv::Mat descriptors;
-        string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
         //// EOF STUDENT ASSIGNMENT
 
@@ -182,4 +218,17 @@ int main(int argc, const char *argv[])
     } // eof loop over all images
 
     return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+    // -d <DET_TYPE> -m <MAT_TYPE> -s <SEL_TYP> [-v[isible]] [-f[ocusOnVehicle]] [-l[imitKpts]]
+    // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+    // MAT_TYPE:  MAT_BF, MAT_FLANN
+    // SEL_TYPE:  SEL_NN, SEL_KNN
+    //
+    vector<string> a1{ "prog", "-d", "SHITOMASI", "-m", "MAT_BF", "-s", "SEL_NN" }; 
+    vector<vector<string>> script{ a1 };
+
+    return _main(argc, argv);
 }
