@@ -27,8 +27,13 @@ struct eval_summary {
     std::string  matcher_type;
     std::string  selector_type;
 
+    int det_err_cnt;
+    int des_err_cnt;
+    int mat_err_cnt;
+
     double  detect_time[MAX_EVALS];
     int     detect_points[MAX_EVALS];
+    int     detect_veh_points[MAX_EVALS];
     double  description_time[MAX_EVALS];
     double  match_time[MAX_EVALS];
     int     match_points[MAX_EVALS];
