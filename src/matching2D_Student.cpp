@@ -5,26 +5,32 @@ using namespace std;
 
 // Find best matches for keypoints in two camera images based on several matching methods
 eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-    std::vector<cv::DMatch> &matches, std::string descriptorFormat, std::string matcherType, std::string selectorType)
+    std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
 {
     eval_stats stats;
     // configure matcher
     // bool crossCheck = false;
-    bool crossCheck = true;
+    bool crossCheck = false;
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
     if (matcherType.compare("MAT_BF") == 0)
     {
-        int normType = descriptorFormat.compare("DES_BINARY") == 0 ? cv::NORM_HAMMING : cv::NORM_L2;
+        // int normType = descriptorType.compare("DES_BINARY") == 0 ? cv::NORM_HAMMING : cv::NORM_L2;
+        int normType = cv::NORM_L2;
+        if (descriptorType.compare("ORB") == 0 || descriptorType.compare("BRISK") == 0 ||
+            descriptorType.compare("BRIEF") == 0) {
+            // normType = cv::NORM_HAMMING2;
+            normType = cv::NORM_HAMMING;
+        }
         matcher = cv::BFMatcher::create(normType, crossCheck);
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
         // OpenCV bug workaround : convert binary descriptors to floating point due to bug in current OpenCV implementation
-        if (descSource.type() == CV_32F) {
+        if (descSource.type() != CV_32F) {
             descSource.convertTo(descSource, CV_32F);
         }
-        if (descSource.type() == CV_32F) {
+        if (descSource.type() != CV_32F) {
             descRef.convertTo(descRef, CV_32F);
         }
         // for ORB
@@ -74,7 +80,7 @@ eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat 
     } else if (descriptorType.compare("BRIEF") == 0) {
         extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
     } else if (descriptorType.compare("ORB") == 0) {
-        extractor = cv::ORB::create();
+        extractor = cv::ORB::create(2000);
     } else if (descriptorType.compare("FREAK") == 0) {
         extractor = cv::xfeatures2d::FREAK::create();
     } else if (descriptorType.compare("AKAZE") == 0) {
@@ -173,7 +179,7 @@ eval_stats detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img
     } else if (detectorType.compare("ORB") == 0) {
         // combination of FAST and BRIEF
         // can set the max number of keypoints
-        detector = cv::ORB::create();
+        detector = cv::ORB::create(2000);
     } else if (detectorType.compare("FREAK") == 0) {
         detector = cv::xfeatures2d::FREAK::create();
     } else if (detectorType.compare("AKAZE") == 0) {
