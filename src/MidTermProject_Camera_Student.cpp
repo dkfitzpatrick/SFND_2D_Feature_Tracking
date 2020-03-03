@@ -21,11 +21,12 @@ using namespace std;
     // -d <DET_TYPE> -m <MAT_TYPE> -s <SEL_TYP> [-v[isible]] [-f[ocusOnVehicle]] [-l[imitKpts]]
     // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
     // MAT_TYPE:  MAT_BF, MAT_FLANN
+    // DES_TYPE:  BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
     // SEL_TYPE:  SEL_NN, SEL_KNN
 
 void usage(const char *progname) {
     cout << "usage: " << endl;
-    cout << progname << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -s <SELECTOR_TYPE> \\" << endl;
+    cout << progname << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -x <DESCRIPTOR_TYPE> -s <SELECTOR_TYPE> \\" << endl;
     cout << "    [-v] [-f] [-l]" << endl;
     cout << "-v: visualize results" << endl;
     cout << "-f: focusOnVehicle" << endl;
@@ -33,16 +34,21 @@ void usage(const char *progname) {
     cout << "" << endl;
     cout << "DETECTOR_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT" << endl;
     cout << "MATCHER_TYPE:  MAT_BF, MAT_FLANN" << endl;
+    cout << "DESCRIPTOR_TYPE: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT" << endl;
     cout << "SELECTOR_TYPE:  SEL_NN, SEL_KNN" << endl;
+    cout << "";
+    cout << "Example:" << endl;
+    cout << "  ./2D_feature_tracking -d SHITOMASI -m MAT_BF -x BRISK -s SEL_NN" << endl;
 }
 
 /* MAIN PROGRAM */
-int main(int argc, const char *argv[])
+eval_summary _main(int argc, const char *argv[])
 {
     /* INIT VARIABLES AND DATA STRUCTURES */
-    string detectorType = ""; //  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
-    string matcherType = "";  // MAT_BF, MAT_FLANN
-    string selectorType = ""; // SEL_NN, SEL_KNN
+    string detectorType = "";    // SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+    string matcherType = "";     // MAT_BF, MAT_FLANN
+    string descriptorType = "";  // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
+    string selectorType = "";    // SEL_NN, SEL_KNN
 
     bool bVis = false;            // visualize results
     bool bFocusOnVehicle = false;
@@ -55,6 +61,9 @@ int main(int argc, const char *argv[])
         } else if (strcmp(argv[i], "-m") == 0) {
             matcherType = argv[++i];
             cout << "MatcherType: " << matcherType << endl;
+        } else if (strcmp(argv[i], "-x") == 0) {
+            descriptorType = argv[++i];
+            cout << "DescriptorType: " << descriptorType << endl;
         } else if (strcmp(argv[i], "-s") == 0) {
             selectorType = argv[++i];
             cout << "SelectorType: " << selectorType << endl;
@@ -63,21 +72,29 @@ int main(int argc, const char *argv[])
             printf("\bvisualize: %d", bVis);
         } else if (strncmp(argv[i], "-f", 2) == 0) {
             bFocusOnVehicle = true;
-            printf("\bfocusOnVehicle: %d", bVis);   
+            printf("\bfocusOnVehicle: %d", bFocusOnVehicle);   
         } else if (strncmp(argv[i], "-l", 2) == 0) {
             bLimitKpts = true;
-            printf("\blimitKpts: %d", bVis);         
+            printf("\blimitKpts: %d", bLimitKpts);         
         } else {
             cout << "unexpected argument found: " << argv[i] << endl;
             exit(-1);
         }
     }
 
-    if (detectorType == "" || matcherType == "" || selectorType == "") {
+    if (detectorType == "" || matcherType == "" || descriptorType == "" || selectorType == "") {
         cout << "incomplete arguments given." << endl;
         usage(argv[0]);
         exit(-1);
     }
+
+    eval_stats stats;
+    eval_summary summary;
+
+    summary.detector_type = detectorType;
+    summary.matcher_type = matcherType;
+    summary.descriptor_type = descriptorType;
+    summary.selector_type = selectorType;
 
     // data location
     string dataPath = "../";
@@ -129,15 +146,20 @@ int main(int argc, const char *argv[])
         //// STUDENT ASSIGNMENT
         //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
         //// -> HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
-
-        double detEvalTime;
-        if (detectorType.compare("SHITOMASI") == 0) {
-            detEvalTime = detKeypointsShiTomasi(keypoints, imgGray, bVis);
-        } else if (detectorType.compare("HARRIS") == 0) {
-            detEvalTime = detKeypointsHarris(keypoints, imgGray, bVis);
-        } else {
-            detEvalTime = detKeypointsModern(keypoints, imgGray, detectorType, bVis);
+        try {
+            if (detectorType.compare("SHITOMASI") == 0) {
+                stats = detKeypointsShiTomasi(keypoints, imgGray, bVis);
+            } else if (detectorType.compare("HARRIS") == 0) {
+                stats = detKeypointsHarris(keypoints, imgGray, bVis);
+            } else {
+                stats = detKeypointsModern(keypoints, imgGray, detectorType, bVis);
+            }
+            summary.detect_time[imgIndex] = stats.time;
+            summary.detect_points[imgIndex] = stats.points;
+        } catch (exception &e) {
+            cerr << "Exception occurred while processing keypoints: " << e.what() << endl;
         }
+
         //// EOF STUDENT ASSIGNMENT
 
         //// STUDENT ASSIGNMENT
@@ -176,7 +198,13 @@ int main(int argc, const char *argv[])
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
         cv::Mat descriptors;
-        descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, detectorType);
+        try {
+            stats = descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+            summary.description_time[imgIndex] = stats.time;
+        } catch (exception &e) {
+            cerr << "Exception occurred while processing descriptors: " << e.what() << endl;
+        }
+        
         //// EOF STUDENT ASSIGNMENT
 
         // push descriptors for current frame to end of data buffer
@@ -188,16 +216,20 @@ int main(int argc, const char *argv[])
         {
             /* MATCH KEYPOINT DESCRIPTORS */
 
-            vector<cv::DMatch> matches;
-            string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
             //// TASK MP.6 -> add KNN match selection and perform descriptor distance ratio filtering with t=0.8 in file matching2D.cpp
 
-            matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
-                             (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
-                             matches, descriptorType, matcherType, selectorType);
+            vector<cv::DMatch> matches;
+            try {
+                stats = matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
+                                (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
+                                matches, descriptorType, matcherType, selectorType);
+                summary.match_time[imgIndex] = stats.time;
+                summary.match_points[imgIndex] = stats.points;
+            } catch (exception &e) {
+                cerr << "Exception occurred while processing matches: " << e.what() << endl;
+            }
 
             //// EOF STUDENT ASSIGNMENT
 
@@ -207,7 +239,6 @@ int main(int argc, const char *argv[])
             cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
             // visualize matches between current and previous image
-            bVis = true;
             if (bVis)
             {
                 cv::Mat matchImg = ((dataBuffer.end() - 1)->cameraImg).clone();
@@ -223,13 +254,70 @@ int main(int argc, const char *argv[])
                 cout << "Press key to continue to next image" << endl;
                 cv::waitKey(0); // wait for key to be pressed
             }
-            bVis = false;
         }
 
     } // eof loop over all images
 
-    return 0;
+    return summary;
 }
 
+int batch_main(int argc, const char *argv[]) {
+    vector<string> detectors =  { "SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "FREAK", "AKAZE", "SIFT" };
+    vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
+    vector<string> descriptors =  { "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };
+    vector<string> selectors =  { "SEL_NN", "SEL_KNN" };
 
+    const char *args[9];
+    args[0] = argv[0];
+    args[1] = "-d";
+    args[3] = "-x";
+    args[5] = "-m";
+    args[7] = "-s";
 
+    vector<eval_summary> summaries;
+
+    for (auto det : detectors) {
+        for (auto des : descriptors) {
+            for (auto mat: matchers) {
+                for (auto sel: selectors) {
+                    args[2] = det.c_str();
+                    args[4] = des.c_str();
+                    args[6] = mat.c_str();
+                    args[8] = sel.c_str();
+
+                    summaries.push_back(_main(9, args));
+                }
+            }
+        }
+    }
+
+}
+
+int main(int argc, const char *argv[]) {
+    bool is_batch = false;
+    // scan for -b
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-b") == 0) {
+            is_batch = true;
+            break;
+        }
+    }
+
+    if (is_batch) {
+        batch_main(argc, argv);
+    } else {
+        eval_summary summary = _main(argc, argv);  
+        cout << "Summary:" << endl;
+        cout << " Detector Type: " << summary.detector_type << endl;
+        cout << " Matcher Type: " << summary.matcher_type << endl;
+        cout << " Descriptor Type: " << summary.descriptor_type << endl;
+        cout << " Selector Type: " << summary.selector_type << endl;
+
+        for (int i = 1; i < MAX_EVALS; i++) {
+            cout << "detect_time: " << summary.detect_time[i] << " points: " << summary.detect_points[i] << endl;
+            cout << "match_time: " << summary.match_time[i] << " points: " << summary.match_points[i] << endl;
+        }
+    }
+
+    return 0;
+}

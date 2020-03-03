@@ -14,6 +14,27 @@ struct DataFrame { // represents the available sensor information at the same ti
     std::vector<cv::DMatch> kptMatches; // keypoint matches between previous and current frame
 };
 
+#define MAX_EVALS 10
+
+struct eval_stats {
+    double time;
+    int points;
+};
+
+struct eval_summary {
+    std::string  detector_type;
+    std::string  descriptor_type;
+    std::string  matcher_type;
+    std::string  selector_type;
+
+    double  detect_time[MAX_EVALS];
+    int     detect_points[MAX_EVALS];
+    double  description_time[MAX_EVALS];
+    double  match_time[MAX_EVALS];
+    int     match_points[MAX_EVALS];
+};
+
+
 // direct drop-in replacement for assignment 1 (supporting api/usage shortfalls and all)
 template<typename T>
 class DataBuffer {

@@ -4,9 +4,10 @@
 using namespace std;
 
 // Find best matches for keypoints in two camera images based on several matching methods
-double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
+eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
     std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
 {
+    eval_stats stats;
     double t;
     // configure matcher
     // bool crossCheck = false;
@@ -53,12 +54,16 @@ double matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::K
         }   
     }
 
-    return t;
+    stats.time = t;
+    stats.points = matches.size();
+
+    return stats;
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
-double descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
+eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
 {
+    eval_stats stats;
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor;
 
@@ -87,13 +92,17 @@ double descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &des
     extractor->compute(img, keypoints, descriptors);
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
+    
+    stats.time = t;
+    stats.points = 0;
 
-    return t;
+    return stats;
 }
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-double implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis, bool useHarris)
+eval_stats implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis, bool useHarris)
 {
+    eval_stats stats;
     // compute detector parameters based on image size
     int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
     double maxOverlap = 0.0; // max. permissible overlap between two features in %
@@ -133,20 +142,24 @@ double implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         imshow(windowName, visImage);
         cv::waitKey(0);
     }
+    
+    stats.time = t;
+    stats.points = keypoints.size();
 
-    return t;
+    return stats;
 }
 
-double detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
+eval_stats detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
     return implCornerDetection(keypoints, img, bVis, false);
 }
 
-double detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
+eval_stats detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
     return implCornerDetection(keypoints, img, bVis, true);
 }
 
 // FAST, BRISK, ORB, FREAK, AKAZE, SIFT
-double detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis){
+eval_stats detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis){
+    eval_stats stats;    
     double t;
     cv::Mat desc;
 
@@ -198,6 +211,9 @@ double detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, st
         imshow(windowName, visImage);
         cv::waitKey(0);
     }
+    
+    stats.time = t;
+    stats.points = keypoints.size();
 
-    return t;
+    return stats;
 }
