@@ -92,18 +92,12 @@ eval_summary _main(int argc, const char *argv[])
 
     eval_stats stats;
     eval_summary summary;
+    memset(&summary, 0, sizeof(eval_summary));
 
     summary.detector_type = detectorType;
     summary.matcher_type = matcherType;
     summary.descriptor_type = descriptorType;
     summary.selector_type = selectorType;
-    summary.det_err_cnt = 0;
-    summary.des_err_cnt = 0;
-    summary.mat_err_cnt = 0;
-    // MAX_EVALS
-    memset(&summary.detect_time, 0, MAX_EVALS*sizeof(double));
-    memset(&summary.description_time, 0, MAX_EVALS*sizeof(double));
-    memset(&summary.match_time, 0, MAX_EVALS*sizeof(double));
 
     // data location
     string dataPath = "../";
@@ -218,9 +212,10 @@ eval_summary _main(int argc, const char *argv[])
         //// TASK MP.4 -> add the following descriptors in file matching2D.cpp and enable string-based selection based on descriptorType
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
+        int normType;
         cv::Mat descriptors;
         try {
-            stats = descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+            stats = descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType, normType);
             summary.description_time[imgIndex] = stats.time;
         } catch (exception &e) {
             cerr << "Exception occurred while processing descriptors: " << e.what() << endl;
@@ -247,7 +242,7 @@ eval_summary _main(int argc, const char *argv[])
             try {
                 stats = matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                                 (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
-                                matches, descriptorType, matcherType, selectorType);
+                                matches, normType, matcherType, selectorType);
                 summary.match_time[imgIndex] = stats.time;
                 summary.match_points[imgIndex] = stats.points;
             } catch (exception &e) {
@@ -288,7 +283,7 @@ eval_summary _main(int argc, const char *argv[])
 
 int batch_main(int argc, const char *argv[]) {
     // vector<string> detectors =  { "SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "FREAK", "AKAZE", "SIFT" };
-    vector<string> detectors =  { "ORB" };
+    vector<string> detectors =  { "BRISK", "ORB", "FREAK" };
     // vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
     vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
     vector<string> descriptors =  { "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };

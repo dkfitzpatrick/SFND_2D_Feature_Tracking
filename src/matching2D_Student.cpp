@@ -5,23 +5,23 @@ using namespace std;
 
 // Find best matches for keypoints in two camera images based on several matching methods
 eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-    std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
+    std::vector<cv::DMatch> &matches, int normType, std::string matcherType, std::string selectorType)
 {
     eval_stats stats;
     // configure matcher
     // bool crossCheck = false;
-    bool crossCheck = false;
+    bool crossCheck = true;
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
     if (matcherType.compare("MAT_BF") == 0)
     {
         // int normType = descriptorType.compare("DES_BINARY") == 0 ? cv::NORM_HAMMING : cv::NORM_L2;
-        int normType = cv::NORM_L2;
-        if (descriptorType.compare("ORB") == 0 || descriptorType.compare("BRISK") == 0 ||
-            descriptorType.compare("BRIEF") == 0) {
-            // normType = cv::NORM_HAMMING2;
-            normType = cv::NORM_HAMMING;
-        }
+        // int normType = cv::NORM_L2;
+        // if (descriptorType.compare("ORB") == 0 || descriptorType.compare("BRISK") == 0 ||
+        //     descriptorType.compare("BRIEF") == 0) {
+        //     // normType = cv::NORM_HAMMING2;
+        //     normType = cv::NORM_HAMMING;
+        // }
         matcher = cv::BFMatcher::create(normType, crossCheck);
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
@@ -35,7 +35,18 @@ eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<c
         }
         // for ORB
         // cv::FlannBasedMatcher matcher = cv::FlannBasedMatcher(cv::makePtr<cv::flann::LshIndexParams>(12, 20, 2));
-        matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+        cv::Ptr<cv::flann::IndexParams> indexParams;
+        if (normType == cv::NORM_L2) {
+            indexParams = new cv::flann::KDTreeIndexParams();
+        } else if (normType == cv::NORM_HAMMING) {
+            indexParams = new cv::flann::LshIndexParams(20, 15, 2);
+        } else {
+            cerr << "unsupported normType" << endl;
+            exit(1);
+        }
+
+        // matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+        matcher = new cv::FlannBasedMatcher(indexParams);
     }
 
     // perform matching task
@@ -66,7 +77,7 @@ eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<c
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
 // required:  BRIEF, ORB, FREAK, AKAZE and SIFT
-eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
+eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType, int &normType)
 {
     eval_stats stats;
     // select appropriate descriptor
@@ -91,6 +102,9 @@ eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat 
         cerr << "descKeypoints -  unexpected detector type: " << descriptorType << endl;
         exit(-1);
     }
+
+    // let the extractor determine the norm
+    normType = extractor->defaultNorm();
 
     // perform feature description
     double t = (double)cv::getTickCount();
@@ -180,8 +194,6 @@ eval_stats detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img
         // combination of FAST and BRIEF
         // can set the max number of keypoints
         detector = cv::ORB::create(2000);
-    } else if (detectorType.compare("FREAK") == 0) {
-        detector = cv::xfeatures2d::FREAK::create();
     } else if (detectorType.compare("AKAZE") == 0) {
         detector = cv::AKAZE::create();
         t = (double)cv::getTickCount();
