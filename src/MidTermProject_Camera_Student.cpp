@@ -6,6 +6,8 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <numeric>
+#include <algorithm>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -357,54 +359,31 @@ int batch_main(int argc, const char *argv[]) {
     fout << "detector, descriptor, matcher, selector, det[ms], num_keypoints, desc[ms], match[ms], num_matchpts, det_err, des_err, mat_err" << endl;
     float div = MAX_EVALS - 1;
     for (auto &eval : summaries) {
-        double avg_detect_time{0.0}, avg_description_time{0.0}, avg_match_time{0.0};
-        int avg_detect_pts{0}, avg_match_pts{0};
-
-        for (int i = 1; i < MAX_EVALS; i++) {
-            avg_detect_time += eval.detect_time[i];
-        }   
-        avg_detect_time = round(avg_detect_time*1000/div);  
-
-        for (int i = 1; i < MAX_EVALS; i++) {
-            avg_description_time += eval.description_time[i];
-        }   
-        avg_description_time = round(avg_description_time*1000/div);   
-
-        for (int i = 1; i < MAX_EVALS; i++) {
-            avg_match_time += eval.match_time[i];
-        }
-        avg_match_time = round(avg_match_time*1000/div);
-
+        double avg_detect_time_ms = accumulate(eval.detect_time + 1, eval.detect_time + MAX_EVALS, 0.0)*1000/div;
+        double avg_description_time_ms = accumulate(eval.description_time + 1, eval.description_time + MAX_EVALS, 0.0)*1000/div;
+        double avg_match_time_ms = accumulate(eval.match_time + 1, eval.match_time + MAX_EVALS, 0.0)*1000/div;
+        int avg_detect_pts;
         if (focusOnVehicle) {
-            for (int i = 1; i < MAX_EVALS; i++) {
-                avg_detect_pts += eval.detect_veh_points[i];
-            }
+            avg_detect_pts = accumulate(eval.detect_veh_points + 1, eval.detect_veh_points + MAX_EVALS, 0)/div;
         } else {
-            for (int i = 1; i < MAX_EVALS; i++) {
-                avg_detect_pts += eval.detect_points[i];
-            }
+            avg_detect_pts = accumulate(eval.detect_points + 1, eval.detect_points + MAX_EVALS, 0)/div;
         }     
-        avg_detect_pts = avg_detect_pts/div;
-
-        for (int i = 1; i < MAX_EVALS; i++) {
-            avg_match_pts += eval.match_points[i];
-        }
-        avg_match_pts = avg_match_pts/div;
+        int avg_match_pts = accumulate(eval.match_points + 1, eval.match_points + MAX_EVALS, 0)/div;
 
         cout << eval.detector_type << "," << eval.descriptor_type << ",";
         cout << eval.matcher_type << "," << eval.selector_type << ",";
-        cout << " avg_det: " << avg_detect_time << "[ms],";
+        cout << " avg_det: " << avg_detect_time_ms << "[ms],";
         cout << " avg_kpts: " << avg_detect_pts << "[pts],";
-        cout << " avg_des: " << avg_description_time << "[ms],";
+        cout << " avg_des: " << avg_description_time_ms << "[ms],";
         cout << " avg_mat_pts: " << avg_match_pts << "[pts],";
-        cout << " avg_mat: " << avg_match_time << "[ms]";
+        cout << " avg_mat: " << avg_match_time_ms << "[ms]";
         cout << " det_err: " << eval.det_err_cnt << ", des_err: " << eval.des_err_cnt << ", mat_err: " << eval.mat_err_cnt;
         cout << endl;
-        fout << eval.detector_type << "," << eval.descriptor_type << ", ";
-        fout << eval.matcher_type << "," << eval.selector_type << ", ";
-        fout << avg_detect_time << ", " << avg_detect_pts << ", ";
-        fout << avg_description_time << ", ";
-        fout << avg_match_time << ", " << avg_match_pts << ", ";
+        fout << eval.detector_type << ", " << eval.descriptor_type << ", ";
+        fout << eval.matcher_type << ", " << eval.selector_type << ", ";
+        fout << avg_detect_time_ms << ", " << avg_detect_pts << ", ";
+        fout << avg_description_time_ms << ", ";
+        fout << avg_match_time_ms << ", " << avg_match_pts << ", ";
         fout << eval.det_err_cnt << ", " << eval.des_err_cnt << ", " << eval.mat_err_cnt;
         fout << endl;
     }
@@ -434,9 +413,11 @@ int main(int argc, const char *argv[]) {
         cout << " Selector Type: " << summary.selector_type << endl;
 
         for (int i = 1; i < MAX_EVALS; i++) {
-            cout << "detect_time: " << floor(summary.detect_time[i]*1000 + 0.5) << "[ms] points: " << summary.detect_points[i] << " ";
-            cout << "match_time: " << floor(summary.match_time[i]*1000 + 0.5) << "[ms] points: " << summary.match_points[i] << endl;
+            cout << "detect_time: " << summary.detect_time[i]*1000 << "[ms] points: " << summary.detect_points[i] << " ";
+            cout << "match_time: " << summary.match_time[i]*1000 << "[ms] points: " << summary.match_points[i] << endl;
         }
+        cout << "total detect time: " << accumulate(summary.detect_time + 1, summary.detect_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
+        cout << "total match time: " << accumulate(summary.match_time + 1, summary.match_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
     }
 
     return 0;
