@@ -21,7 +21,7 @@
 using namespace std;
 
     // -d <DET_TYPE> -m <MAT_TYPE> -s <SEL_TYP> [-v[isible]] [-f[ocusOnVehicle]] [-l[imitKpts]]
-    // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT
+    // DET_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
     // MAT_TYPE:  MAT_BF, MAT_FLANN
     // DES_TYPE:  BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
     // SEL_TYPE:  SEL_NN, SEL_KNN
@@ -34,7 +34,7 @@ void usage(const char *progname) {
     cout << "-f: focusOnVehicle" << endl;
     cout << "-l: limitKpts" << endl;    
     cout << "" << endl;
-    cout << "DETECTOR_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, FREAK, AKAZE, SIFT" << endl;
+    cout << "DETECTOR_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, SIFT" << endl;
     cout << "MATCHER_TYPE:  MAT_BF, MAT_FLANN" << endl;
     cout << "DESCRIPTOR_TYPE: BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT" << endl;
     cout << "SELECTOR_TYPE:  SEL_NN, SEL_KNN" << endl;
@@ -282,11 +282,13 @@ eval_summary _main(int argc, const char *argv[])
 }
 
 int batch_main(int argc, const char *argv[]) {
-    // vector<string> detectors =  { "SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "FREAK", "AKAZE", "SIFT" };
-    vector<string> detectors =  { "BRISK", "ORB", "FREAK" };
+    // vector<string> detectors =  { "SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT" };
+    vector<string> detectors =  { "SIFT" };
     // vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
     vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
+    // SIFT with ORB results in OOM exceptions
     vector<string> descriptors =  { "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };
+    // vector<string> descriptors =  { "ORB" };
     // vector<string> selectors =  { "SEL_NN", "SEL_KNN" };
     vector<string> selectors =  { "SEL_NN", "SEL_KNN" };
 
@@ -318,6 +320,9 @@ int batch_main(int argc, const char *argv[]) {
             }
             if (det == "AKAZE" && des != "AKAZE") {
                 continue;  // only akaze descriptors with akaze detectors
+            }
+            if (det == "SIFT" && des == "ORB") {
+                continue;
             }
             for (auto mat: matchers) {
                 for (auto sel: selectors) {

@@ -9,8 +9,11 @@ eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<c
 {
     eval_stats stats;
     // configure matcher
-    // bool crossCheck = false;
     bool crossCheck = true;
+    if (selectorType.compare("SEL_KNN") == 0) {
+        // if crossCheck == true, can only use k=1 in knnMatch
+        crossCheck = false;
+    }
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
     if (matcherType.compare("MAT_BF") == 0)
@@ -26,15 +29,18 @@ eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<c
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
-        // OpenCV bug workaround : convert binary descriptors to floating point due to bug in current OpenCV implementation
-        if (descSource.type() != CV_32F) {
-            descSource.convertTo(descSource, CV_32F);
+//        matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+
+        if (normType == cv::NORM_L2) {
+            // OpenCV bug workaround : convert binary descriptors to floating point due to bug in current OpenCV implementation
+            if (descSource.type() != CV_32F) {
+                descSource.convertTo(descSource, CV_32F);
+            }
+            if (descSource.type() != CV_32F) {
+                descRef.convertTo(descRef, CV_32F);
+            }
         }
-        if (descSource.type() != CV_32F) {
-            descRef.convertTo(descRef, CV_32F);
-        }
-        // for ORB
-        // cv::FlannBasedMatcher matcher = cv::FlannBasedMatcher(cv::makePtr<cv::flann::LshIndexParams>(12, 20, 2));
+
         cv::Ptr<cv::flann::IndexParams> indexParams;
         if (normType == cv::NORM_L2) {
             indexParams = new cv::flann::KDTreeIndexParams();
@@ -44,8 +50,6 @@ eval_stats matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<c
             cerr << "unsupported normType" << endl;
             exit(1);
         }
-
-        // matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
         matcher = new cv::FlannBasedMatcher(indexParams);
     }
 
