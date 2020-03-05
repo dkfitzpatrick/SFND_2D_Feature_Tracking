@@ -31,8 +31,9 @@ void usage(const char *progname) {
     cout << progname << " -d <DETECTOR_TYPE> -m <MATCHER_TYPE> -x <DESCRIPTOR_TYPE> -s <SELECTOR_TYPE> \\" << endl;
     cout << "    [-v] [-f] [-l]" << endl;
     cout << "-v: visualize results" << endl;
-    cout << "-f: focusOnVehicle" << endl;
-    cout << "-l: limitKpts" << endl;    
+    cout << "-f: focus on vehicle rectangle" << endl;
+    cout << "-l: limit keypts" << endl;    
+    cout << "-b: run compiled in batch tests (output stats.csv) ";
     cout << "" << endl;
     cout << "DETECTOR_TYPE:  SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, SIFT" << endl;
     cout << "MATCHER_TYPE:  MAT_BF, MAT_FLANN" << endl;

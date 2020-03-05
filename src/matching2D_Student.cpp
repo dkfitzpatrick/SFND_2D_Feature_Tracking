@@ -123,7 +123,7 @@ eval_stats descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat 
 }
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-eval_stats implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis, bool useHarris)
+eval_stats detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
 {
     eval_stats stats;
     // compute detector parameters based on image size
@@ -132,6 +132,7 @@ eval_stats implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bo
     double minDistance = (1.0 - maxOverlap) * blockSize;
     int maxCorners = img.rows * img.cols / max(1.0, minDistance); // max. num. of keypoints
     int harrisCorner = 4;
+    bool useHarris = false;
 
     string msg("Shi-Tomasi");
     if (useHarris) {
@@ -176,17 +177,7 @@ eval_stats implCornerDetection(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bo
     return stats;
 }
 
-eval_stats detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
-    return implCornerDetection(keypoints, img, bVis, false);
-}
-
-#if 0
-eval_stats detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
-    return implCornerDetection(keypoints, img, bVis, true);
-}
-#else
 // go back to old harris corner detector...
-
 eval_stats detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis) {
     // Detector parameters
     eval_stats stats;
@@ -260,8 +251,6 @@ eval_stats detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, boo
 
     return stats;
 }
-
-#endif
 
 // FAST, BRISK, ORB, FREAK, AKAZE, SIFT
 eval_stats detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis){
