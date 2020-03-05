@@ -295,10 +295,10 @@ int batch_main(int argc, const char *argv[]) {
     bool focusOnVehicle = false;
     bool limitKpts = false;
     for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "-f") == 0) {
+        if (strncmp(argv[i], "-f", 2) == 0) {
             focusOnVehicle = true;
         }
-        if (strcmp(argv[i], "-l") == 0) {
+        if (strncmp(argv[i], "-l", 2) == 0) {
             limitKpts = true;
         }
     }
@@ -315,13 +315,8 @@ int batch_main(int argc, const char *argv[]) {
     int min_args = 9;   // base number of args
     for (auto det : detectors) {
         for (auto des : descriptors) {
-            if (det != "AKAZE" && des == "AKAZE") {
-                continue;  // cannot use akaze descriptors with non-akaze detectors
-            }
-            if (det == "AKAZE" && des != "AKAZE") {
-                continue;  // only akaze descriptors with akaze detectors
-            }
             if (det == "SIFT" && des == "ORB") {
+                // getting OOM erors here...  not resolved.
                 continue;
             }
             for (auto mat: matchers) {
@@ -416,8 +411,8 @@ int main(int argc, const char *argv[]) {
             cout << "detect_time: " << summary.detect_time[i]*1000 << "[ms] points: " << summary.detect_points[i] << " ";
             cout << "match_time: " << summary.match_time[i]*1000 << "[ms] points: " << summary.match_points[i] << endl;
         }
-        cout << "total detect time: " << accumulate(summary.detect_time + 1, summary.detect_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
-        cout << "total match time: " << accumulate(summary.match_time + 1, summary.match_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
+        cout << "avg total detect time: " << accumulate(summary.detect_time + 1, summary.detect_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
+        cout << "avg total match time: " << accumulate(summary.match_time + 1, summary.match_time + MAX_EVALS, 0.0)*1000/(MAX_EVALS - 1) << "[ms]" << endl;
     }
 
     return 0;
