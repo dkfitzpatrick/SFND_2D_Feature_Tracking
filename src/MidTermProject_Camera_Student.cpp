@@ -332,13 +332,14 @@ int batch_main(int argc, const char *argv[]) {
     // vector<string> matchers =  { "MAT_BF", "MAT_FLANN" };
     vector<string> matchers =  { "MAT_BF" };
     // SIFT with ORB results in OOM exceptions
-    vector<string> descriptors =  { "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };
-    // vector<string> descriptors =  { "BRISK" };
+    // vector<string> descriptors =  { "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };
+    vector<string> descriptors =  { "BRISK" };
     // vector<string> selectors =  { "SEL_NN", "SEL_KNN" };
     vector<string> selectors =  { "SEL_KNN" };
 
     bool focusOnVehicle = false;
     bool limitKpts = false;
+    bool visualize = false;
     for (int i = 0; i < argc; i++) {
         if (strncmp(argv[i], "-f", 2) == 0) {
             focusOnVehicle = true;
@@ -346,9 +347,12 @@ int batch_main(int argc, const char *argv[]) {
         if (strncmp(argv[i], "-l", 2) == 0) {
             limitKpts = true;
         }
+        if (strncmp(argv[i], "-v", 2) == 0) {
+            visualize = true;
+        }
     }
 
-    const char *args[11];  // required + two optional flags
+    const char *args[12];  // required + three optional flags
     args[0] = argv[0];
     args[1] = "-d";
     args[3] = "-x";
@@ -379,6 +383,9 @@ int batch_main(int argc, const char *argv[]) {
                     if (limitKpts) {
                         args[ac++] = "-l";
                     }
+                    if (visualize) {
+                        args[ac++] = "-v";
+                    }
                     summaries.push_back(_main(ac, args));
                 }
             }
@@ -398,8 +405,8 @@ int batch_main(int argc, const char *argv[]) {
     ofstream fout(foutname, ios::out);
 
     if (false) {
-        // task7(fout, summaries);
-        task8(fout, summaries);
+        task7(fout, summaries);
+        // task8(fout, summaries);
     } else {
         fout << "detector, descriptor, matcher, selector, det[ms], num_keypoints, desc[ms], match[ms], num_matchpts, det_err, des_err, mat_err" << endl;
         float div = MAX_EVALS - 1;

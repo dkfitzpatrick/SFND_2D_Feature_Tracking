@@ -10,14 +10,9 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/2D_feature_tracking",
             "args": [
-                "-d",
-                "SHITOMASI",
-                "-m",
-                "MAT_BF",
-                "-x",
-                "SIFT",
-                "-s",
-                "SEL_NN"
+                "-b",
+                "-f",
+                "-v"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

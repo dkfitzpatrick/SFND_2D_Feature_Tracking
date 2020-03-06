@@ -74,6 +74,24 @@ The following analysis of points detected within the region of the vehicle using
 
 Of note is the HARRIS detector with a small number of detected keypoints, as well as a large variation in the detected keypoints within the vehicle region.
 
+### Visual Assessments of Detectors
+
+Assessment of critical keypoints, including detection of taillights, license plate, roof line, upper brake light as tracking points as well as points outside of the vehicle of interest or on ephemeral points such as shadows.
+
+- *SHITOMASI*:  (+) points on edges, license plate, brake lights stable.  (-) many points outside of vehicle, car cast shadow.
+
+- *HARRIS*:  (+) points on brake lights.  (-) minimal keypoints, some critical keypoints intermittent.
+
+- *FAST*:   (+) large number of keypoints on vehicle.  (-) lots of keypoints outside region of interst, car cast shadow, some mismatches.
+
+- *BRISK*:  (+) large number of keypoints on vehicle, esp license plate.  (-) occasional mismatch.
+
+- *ORB*:  (+) large number of keypoints focused on upper half of vehicle (no vehicle cast shadow keypoints).  (-) minmal keypoints on license plate.
+
+- *AKAZE*:  (+) mainly points on top of vehicle.  (-) some car cast shadow keypoints, no license plate points.
+
+- *SIFT*:  (+) reasonable amount of keypoints, mostly on top of vehicle.  (-) some errors, keypoints shifted.
+
 ## Task MP.8 - Keypoint Matching Analysis
 
 The following tabulates the combinations of detector and descriptor for matching using brute force (MAT_BF) and k nearest neighbor (SEL_KNN) with min descriptor distance ratio of 0.8.
@@ -130,15 +148,18 @@ Note:  Akaze descriptors with non-Akaze detection resulted in exceptions.
 Below are the top three recommendations for keypoint detection for vehicle tracking (full table follows).  
 
 |rank | detect    |  descript |  matcher   |  select  |  det[ms] |  #kpts |  desc[ms] |  match[ms] |  #mat_kpts | avg_total_time[ms] | #mat_vehkpts | 
-| 1 | ORB       |  BRISK    |  MAT_BF    |  SEL_KNN | 128.626  | 2000           | 52.2385   | 20.7843    | 1228          | 201.65         | 226    | 
-| 2 | FAST      |  ORB      |  MAT_BF    |  SEL_KNN | 40.7212  | 4904           | 65.3633   | 145.352    | 2736          | 251.44         | 306   | 
-| 3 | SHITOMASI |  ORB      |  MAT_BF    |  SEL_KNN | 77.7339  | 1339           | 32.1486   | 14.9347    | 891           | 124.82         | 100    | 
+|-----|-----------|-----------|------------|----------|----------|--------|-----------|------------|------------|--------------------|--------------|
+| 1   | ORB       |  BRISK    |  MAT_BF    |  SEL_KNN | 128.626  | 2000   | 52.2      | 20.8       | 1228       | 201.7              | 226          | 
+| 2   | FAST      |  ORB      |  MAT_BF    |  SEL_KNN | 40.7212  | 4904   | 65.4      | 145.4      | 2736       | 251.4              | 306          | 
+| 3   | SHITOMASI |  ORB      |  MAT_BF    |  SEL_KNN | 77.7339  | 1339   | 32.1      | 14.9       | 891        | 124.8              | 100          | 
 
-### Rationale
+
+### Selection Rationale
 
 The criteria for selection included:
-1. Accuracy and repeatability (generally excluded HARRIS detectors) - verified visually
-2. Number of features detected within region of interested (generally excluded SHITOMASI detectors)
+
+1. Accuracy and repeatability (generally excluded HARRIS detectors) - verified visually match quality
+2. Number of features detected within region of interested (negatively affected SHITOMASI detector flows)
 3. Performance - minimal average total processing time and maximal features per second.
 
 All selected detectors used brute-force matching with K-nearest neighbor selection.   The ORB/2000 - BRISK flow was top choice due to a combination of being reasonably performant, with a larger number of keypoints detected within the region of interest.   The FAST - ORB combination came in second, primarily due to the slower processing time.   The third option was chosen because produced what was considered a sufficient number of tracking points on the region of interest, and did so in a performant manner - approximately twice the speed of first two choices.
